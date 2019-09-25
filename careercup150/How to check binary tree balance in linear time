@@ -1,0 +1,173 @@
+
+how to check balance of binary tree?
+
+
+1. definition: a binary is balanced if for every node its left and right subtrees differ at 
+most by 1 at height. 
+
+2. this means we need to check every node. If we use recursion, the recursive case 
+will be check the left and subtrees of current node and recursively check next nodes.i.e
+its left and right nodes. The base case will be null i.e. either root is null or it hits
+the leafs. 
+
+3. the code will be 
+   public boolean isBalanced(TreeNode root){
+      if(root == null) return true;
+      return Math.abs(height(root.left) - height(root.right)) <= 1 && isBalanced(root.left)
+             && isBalanced(root.right);
+   }
+
+   the problem about this method is that it there are two layers of traversal, the 
+   first layer is the isBalance method, the second is height method. They do the same 
+   traveral. The time complexity is O(n^2). To reduce the time complexity, we only traverse
+   the tree once. We either build in the height function into isBalance method or vice versa.
+   
+4. isBalanced built-in height 
+
+   public boolean isBalanced(TreeNode root){
+      if(height(root) == -1) return false;
+      return true;
+   }   
+   
+   //step by step modifying height
+   //step1: the original height only deal with null and return the real height
+   //now we want it return balance info. If we don't use recursion, then we can return
+   //the balance info immediately after we find any unbalanced subtree. If we use recursion
+   //,then we have to go through the recursion stack. So we want to return the unbalanced info
+   //alway upwards whenever an unbalance is found. We also need to return sth else if it's balanced.
+   //The goal of modification is thus that it returns real height if
+   //the tree is balanced and returns unbalanced info if it's unbalanced. We use -1 
+   //as the unbalanced indicator 
+   //Can we arbitrarily choose a number say 0 for a balanced subtree ? No, because at
+   //each node we need to compare height diff of its left and right subtrees. So we need
+   //the real height of a balanced subtree.
+   
+   public int height(TreeNode root){
+      if(root == null) return 0;
+          
+      if(Math.abs(height(root.left) - height(root.right)) <= 1){   
+         return 1 + Math.max(height(root.left), height(root.right));
+      }
+   
+   }
+   
+   //step2: add unbalance return value
+   public int height(TreeNode root){
+      if(root == null) return 0;
+         
+      
+      if(Math.abs(height(root.left) - height(root.right)) > 1) return -1;
+         
+      return 1 + Math.max(height(root.left), height(root.right));
+    
+   }
+   
+   //step3: The recursion starts from leafs and goes upward back to root. At the very beginning
+   //of recursion stack, the leftmost leaf node 1L will be visited first, then its right sibling 1R
+   //only if its parent node 2L has no right sibling 2R, the height difference
+   //btw left and right subtree of 3L (grandparent node) will > 1. The height of 3L will be
+   //-1. The height of 3R could be -1, 0, 1, or 2. If 3R is of height -1 or 0, the height of 4L
+   //will be 0 or 1. The unbalanced info is lost at 4L. So we need add sth to make sure that
+   //-1 will not be masked as info is being transported from bottom to up layers. 
+   public int height(TreeNode root){
+      if(root == null) return 0;
+         
+      int leftHeight = height(root.left);
+      int rightHeight = height(root.right);
+      if(Math.abs(leftHeight - rightHeight) > 1) return -1;   
+      return 1 + Math.max(leftHeight, rightHeight);
+    
+   }
+   
+   //step4: by adding these four line of code, we assert that the height of visiting
+   //node is -1 if any one of its subtree has height of -1. Thus the unbalanced info
+   //can be transported upward without getting lost. 
+   public int height(TreeNode root){
+      if(root == null) return 0;
+         
+      int leftHeight = height(root.left);
+      if(leftHeight == -1 ) return -1;
+      int rightHeight = height(root.right);
+      if(rightHeight == -1) return -1;
+      
+      if(Math.abs(leftHeight - rightHeight) > 1) return -1;   
+      return 1 + Math.max(leftHeight, rightHeight);
+    
+   }
+
+5. height build-in isBalanced
+   //we try to merge height into isBalanced recursion stack
+   //Originally isBalanced check the balance of left and right subtrees of current node using
+   //one recursion and use a second recursion for the height of left and right subtrees.
+   //isBalanced only returned true or false. Now we also want it to return the height of the subtree
+   //it's visiting. So we need a trace object to record the height. 
+    
+   //step1: the original code
+   public boolean isBalanced(TreeNode root){
+      if(root == null) return true;
+      return Math.abs(height(root.left) - height(root.right)) <= 1 && isBalanced(root.left)
+             && isBalanced(root.right);
+   }
+   
+   //step2: remove the height recursion 
+   public boolean isBalanced(TreeNode root){
+      if(root == null) return true;
+      boolean leftBalance = isBalanced(root.left);
+      boolean rightBalance = isBalanced(roor.right);
+      
+      return Math.abs(leftHeight - rightHeight) <= 1 && 
+            leftBalance && rightBalance;
+   }
+   
+   //step3: add height object to store the height information
+   //but we need to update the height infor for every recursive case
+   public boolean isBalanced(TreeNode root,Height height){
+      if(root == null) return true;
+      boolean leftBalance = isBalanced(root.left,height);
+      boolean rightBalance = isBalanced(roor.right,height);
+      
+      return Math.abs(height.leftHeight - height.rightHeight) <= 1 && 
+            leftBalance && rightBalance;
+   }
+   
+   //step3:at current node,we need to update height.height, height.left,height.right
+   //the tree fields height should be updated continuously 
+   
+   public boolean isBalanced(TreeNode root,Height height){
+      if(root == null) return true;
+      boolean leftBalance = isBalanced(root.left,height);
+      int leftHeight = height.height;
+      boolean rightBalance = isBalanced(roor.right,height);
+      int rightHeight = height.height;
+      height.height = 1+ Math.max(leftHeight,rightHeight);
+      
+      return (Math.abs(leftHeight - rightHeight) <= 1) && 
+            leftBalance && rightBalance;
+   }
+   //step4: check the code by running through an example, fix the missing updating height
+   //in base case
+   public boolean isBalanced(TreeNode root,Height height){
+      // very important, the structure of base and recursive case are similar.
+      // update height, then return boolean value
+        
+      if(root == null) {
+         height.height = 0; 
+         return true;
+      }
+      boolean leftBalance = isBalanced(root.left,height);
+      int leftHeight = height.height;
+      boolean rightBalance = isBalanced(roor.right,height);
+      int rightHeight = height.height;
+      //update the height
+      height.height = 1+ Math.max(leftHeight,rightHeight);
+      
+      return (Math.abs(leftHeight - rightHeight) <= 1) && 
+            leftBalance && rightBalance;
+   }
+   
+   //more thoughts
+   //1) Any better data structure to trace height? we can use string, array or list with
+   //only one element, but it's simpler to write a new object named Height that only has one field
+   //2) it's much more elegant than built isBalanced into height. Because it looks simpler
+   // much less code and it returns the real height of a tree rather than -1. The balance info is carried
+   // by return value of isBalanced.   
